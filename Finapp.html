@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinTrack - Financial Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #64748b;
+            --light: #f1f5f9;
+            --dark: #0f172a;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --gray: #94a3b8;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f8fafc;
+            color: var(--dark);
+        }
+        
+        /* Header and Navigation */
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-size: 0.875rem;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid white;
+            color: white;
+        }
+
+        .btn-outline:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-light {
+            background-color: white;
+            color: var(--primary);
+        }
+
+        .btn-light:hover {
+            background-color: #f8fafc;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        nav {
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-container {
+            display: flex;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .nav-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-item {
+            padding: 1rem 1.5rem;
+            font-weight: 500;
+            color: var(--secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        /* Main Content */
+        main {
+            padding: 2rem 1rem;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (min-width: 640px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .stat-card {
+            background-color: white;
+            border-radius: 0.5rem;
+            padding: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-title {
+            color: var(--secondary);
+            font-size: 0.875rem;
+        }
+
+        .stat-icon {
+            background-color: var(--light);
+            padding: 0.5rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            display: flex;
+            align-items: center;
+            font-size: 0.875rem;
+        }
+
+        .positive {
+            color: var(--success);
+        }
+
+        .negative {
+            color: var(--danger);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 1024px) {
+            .charts-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .chart-container {
+            background-color: white;
+            border-radius: 0.5rem;
+            padding: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-header {
+            margin-bottom: 1rem;
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        /* Portfolio */
+        .card {
+            background-color: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            background-color: var(--light);
+            font-weight: 500;
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--light);
+        }
+
+        /* News */
+        .news-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .news-item {
+            border-bottom: 1px solid var(--light);
+            padding-bottom: 1rem;
+        }
+
+        .news-item:last-child {
+            border-bottom: none;
+        }
+
+        .news-title {
+            font-size: 1.125rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .news-description {
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .news-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .news-source {
+            font-size: 0.875rem;
+            color: var(--gray);
+        }
+
+        .news-link {
+            color: var(--primary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .news-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Calculator Section */
+        .calc-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .calc-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray);
+            border-radius: 0.375rem;
+            font-size: 1rem;
+        }
+
+        .result-container {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: var(--light);
+            border-radius: 0.375rem;
+        }
+
+        .result-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--dark);
+            color: white;
+            padding: 2rem 1rem;
+            margin-top: 2rem;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .footer-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .footer-col h3 {
+            font-size: 1.125rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-col p {
+            color: var(--gray);
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-links a {
+            color: var(--gray);
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .email-form {
+            display: flex;
+        }
+
+        .email-input {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 0.375rem 0 0 0.375rem;
+            width: 100%;
+        }
+
+        .submit-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0 0.375rem 0.375rem 0;
+            cursor: pointer;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 1.5rem;
+            margin-top: 1.5rem;
+            border-top: 1px solid #334155;
+            color: var(--gray);
+            font-size: 0.875rem;
+        }
+
+        /* Tools Section */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .tools-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .tool-card {
+            background-color: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tool-icon {
+            background-color: var(--light);
+            width: 50px;
+            height: 50px;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        .tool-content h3 {
+            font-size: 1.125rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .tool-content p {
+            color: var(--secondary);
+            font-size: 0.875rem;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 0.5rem;
+            max-width: 500px;
+            width: 100%;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--secondary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <h1>FinTrack</h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline">Log In</button>
+                <button class="btn btn-light">Sign Up</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="container nav-container">
+            <div class="nav-item active" data-tab="dashboard">Dashboard</div>
+            <div class="nav-item" data-tab="portfolio">Portfolio</div>
+            <div class="nav-item" data-tab="tools">Financial Tools</div>
+            <div class="nav-item" data-tab="news">Market News</div>
+            <div class="nav-item" data-tab="calculator">Calculators</div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Portfolio Value</div>
+                        <div class="stat-icon">💰</div>
+                    </div>
+                    <div class="stat-value">$124,500</div>
+                    <div class="stat-change positive">
+                        <span>&#9650;</span>
+                        <span>5.3% this month</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Monthly Income</div>
+                        <div class="stat-icon">📈</div>
+                    </div>
+                    <div class="stat-value">$8,245</div>
+                    <div class="stat-change positive">
+                        <span>&#9650;</span>
+                        <span>2.1% from last month</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Monthly Expenses</div>
+                        <div class="stat-icon">📉</div>
+                    </div>
+                    <div class="stat-value">$5,127</div>
+                    <div class="stat-change negative">
+                        <span>&#9660;</span>
+                        <span>0.8% from last month</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Savings Rate</div>
+                        <div class="stat-icon">💎</div>
+                    </div>
+                    <div class="stat-value">37.8%</div>
+                    <div class="stat-change positive">
+                        <span>&#9650;</span>
+                        <span>1.2% from last month</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Portfolio Performance (2025)</h3>
+                    </div>
+                    <canvas id="portfolioChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Asset Allocation</h3>
+                    </div>
+                    <canvas id="allocationChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio Tab -->
+        <div id="portfolio" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Your Investment Portfolio</h2>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Stock</th>
+                                <th>Shares</th>
+                                <th>Price</th>
+                                <th>Value</th>
+                                <th>Change</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>AAPL</td>
+                                <td>25</td>
+                                <td>$198.45</td>
+                                <td>$4,961.25</td>
+                                <td class="positive">+2.3%</td>
+                            </tr>
+                            <tr>
+                                <td>MSFT</td>
+                                <td>15</td>
+                                <td>$417.15</td>
+                                <td>$6,257.25</td>
+                                <td class="positive">+1.1%</td>
+                            </tr>
+                            <tr>
+                                <td>AMZN</td>
+                                <td>10</td>
+                                <td>$182.47</td>
+                                <td>$1,824.70</td>
+                                <td class="negative">-0.5%</td>
+                            </tr>
+                            <tr>
+                                <td>GOOGL</td>
+                                <td>8</td>
+                                <td>$169.32</td>
+                                <td>$1,354.56</td>
+                                <td class="positive">+0.8%</td>
+                            </tr>
+                            <tr>
+                                <td>TSLA</td>
+                                <td>12</td>
+                                <td>$178.92</td>
+                                <td>$2,147.04</td>
+                                <td class="negative">-1.2%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="chart-container" style="margin-top: 1.5rem;">
+                <div class="chart-header">
+                    <h3 class="chart-title">Portfolio Performance History</h3>
+                </div>
+                <canvas id="portfolioHistoryChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Financial Tools Tab -->
+        <div id="tools" class="tab-content">
+            <h2 class="card-title">Financial Tools</h2>
+            <div class="tools-grid">
+                <div class="tool-card" onclick="openCalculator('investment')">
+                    <div class="tool-icon">💹</div>
+                    <div class="tool-content">
+                        <h3>Investment Calculator</h3>
+                        <p>Calculate future value of your investments</p>
+                    </div>
+                </div>
+                <div class="tool-card" onclick="openCalculator('loan')">
+                    <div class="tool-icon">🏦</div>
+                    <div class="tool-content">
+                        <h3>Loan Calculator</h3>
+                        <p>Calculate monthly payments and total interest</p>
+                    </div>
+                </div>
+                <div class="tool-card" onclick="openCalculator('retirement')">
+                    <div class="tool-icon">🏝️</div>
+                    <div class="tool-content">
+                        <h3>Retirement Calculator</h3>
+                        <p>Plan your retirement savings</p>
+                    </div>
+                </div>
+                <div class="tool-card" onclick="openCalculator('budget')">
+                    <div class="tool-icon">📊</div>
+                    <div class="tool-content">
+                        <h3>Budget Analyzer</h3>
+                        <p>Analyze and optimize your spending habits</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market News Tab -->
+        <div id="news" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Market News</h2>
+                <div class="news-list">
+                    <div class="news-item">
+                        <h3 class="news-title">Fed Signals Potential Rate Cut in June Meeting</h3>
+                        <p class="news-description">Federal Reserve officials indicated they might be ready to cut interest rates at their upcoming meeting, citing improving inflation data.</p>
+                        <div class="news-meta">
+                            <span class="news-source">Financial Times • 2 hours ago</span>
+                            <a href="#" class="news-link">Read More</a>
+                        </div>
+                    </div>
+                    <div class="news-item">
+                        <h3 class="news-title">Tech Stocks Rally Amid Strong Earnings Reports</h3>
+                        <p class="news-description">Major technology companies posted better-than-expected earnings for Q1 2025, driving a broad market rally in the sector.</p>
+                        <div class="news-meta">
+                            <span class="news-source">Wall Street Journal • 5 hours ago</span>
+                            <a href="#" class="news-link">Read More</a>
+                        </div>
+                    </div>
+                    <div class="news-item">
+                        <h3 class="news-title">Housing Market Shows Signs of Cooling</h3>
+                        <p class="news-description">After months of rapid price increases, the housing market appears to be slowing down as mortgage rates stabilize.</p>
+                        <div class="news-meta">
+                            <span class="news-source">Bloomberg • 8 hours ago</span>
+                            <a href="#" class="news-link">Read More</a>
+                        </div>
+                    </div>
+                    <div class="news-item">
+                        <h3 class="news-title">Oil Prices Decline as Supply Concerns Ease</h3>
+                        <p class="news-description">Crude oil prices dropped by 3% today following reports of increased production and easing geopolitical tensions.</p>
+                        <div class="news-meta">
+                            <span class="news-source">Reuters • 10 hours ago</span>
+                            <a href="#" class="news-link">Read More</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculators Tab -->
+        <div id="calculator" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Financial Calculators</h2>
+                <div class="calc-container">
+                    <div class="calc-section">
+                        <h3 style="margin-bottom: 1rem;">Investment Calculator</h3>
+                        <div class="form-group">
+                            <label for="initial">Initial Investment ($)</label>
+                            <input type="number" id="initial" value="10000">
+                        </div>
+                        <div class="form-group">
+                            <label for="monthly">Monthly Contribution ($)</label>
+                            <input type="number" id="monthly" value="500">
+                        </div>
+                        <div class="form-group">
+                            <label for="rate">Annual Interest Rate (%)</label>
+                            <input type="number" id="rate" value="7" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="years">Investment Years</label>
+                            <input type="number" id="years" value="10">
+                        </div>
+                        <button class="btn btn-primary" onclick="calculateInvestment()">Calculate</button>
+                        
+                        <div class="result-container">
+                            <div>Future Investment Value:</div>
+                            <div class="result-value" id="investment-result">$0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="investmentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Investment Calculator Modal -->
+    <div id="investmentModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('investmentModal')">&times;</button>
+            <h2 style="margin-bottom: 1.5rem;">Investment Growth Calculator</h2>
+            <div class="form-group">
+                <label for="modal-initial">Initial Investment ($)</label>
+                <input type="number" id="modal-initial" value="10000">
+            </div>
+            <div class="form-group">
+                <label for="modal-monthly">Monthly Contribution ($)</label>
+                <input type="number" id="modal-monthly" value="500">
+            </div>
+            <div class="form-group">
+                <label for="modal-rate">Annual Interest Rate (%)</label>
+                <input type="number" id="modal-rate" value="7" step="0.1">
+            </div>
+            <div class="form-group">
+                <label for="modal-years">Investment Years</label>
+                <input type="number" id="modal-years" value="10">
+            </div>
+            <button class="btn btn-primary" onclick="calculateModalInvestment()">Calculate</button>
+            
+            <div class="result-container">
+                <div>Future Investment Value:</div>
+                <div class="result-value" id="modal-investment-result">$0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loan Calculator Modal -->
+    <div id="loanModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('loanModal')">&times;</button>
+            <h2 style="margin-bottom: 1.5rem;">Loan Payment Calculator</h2>
+            <div class="form-group">
+                <label for="loan-amount">Loan Amount ($)</label>
+                <input type="number" id="loan-amount" value="250000">
+            </div>
+            <div class="form-group">
+                <label for="loan-term">Loan Term (years)</label>
+                <input type="number" id="loan-term" value="30">
+            </div>
+            <div class="form-group">
+                <label for="loan-rate">Interest Rate (%)</label>
+                <input type="number" id="loan-rate" value="4.5" step="0.1">
+            </div>
+            <button class="btn btn-primary" onclick="calculateLoan()">Calculate</button>
+            
+            <div class="result-container">
+                <div>Monthly Payment:</div>
+                <div class="result-value" id="loan-payment-result">$0</div>
+                <div style="margin-top: 0.5rem;">Total Interest Paid:</div>
+                <div class="result-value" id="loan-interest-result">$0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Retirement Calculator Modal -->
+    <div id="retirementModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('retirementModal')">&times;</button>
+            <h2 style="margin-bottom: 1.5rem;">Retirement Planning Calculator</h2>
+            <div class="form-group">
+                <label for="current-age">Current Age</label>
+                <input type="number" id="current-age" value="35">
+            </div>
+            <div class="form-group">
+                <label for="retirement-age">Retirement Age</label>
+                <input type="number" id="retirement-age" value="65">
+            </div>
+            <div class="form-group">
+                <label for="current-savings">Current Savings ($)</label>
+                <input type="number" id="current-savings" value="50000">
+            </div>
+            <div class="form-group">
+                <label for="monthly-contrib">Monthly Contribution ($)</label>
+                <input type="number" id="monthly-contrib" value="1000">
+            </div>
+            <div class="form-group">
+                <label for="retirement-rate">Expected Annual Return (%)</label>
+                <input type="number" id="retirement-rate" value="7" step="0.1">
+            </div>
+            <button class="btn btn-primary" onclick="calculateRetirement()">Calculate</button>
+            
+            <div class="result-container">
+                <div>Retirement Savings at Age <span id="retire-age">65</span>:</div>
+                <div class="result-value" id="retirement-result">$0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Analyzer Modal -->
+    <div id="budgetModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('budgetModal')">&times;</button>
+            <h2 style="margin-bottom: 1.5rem;">Budget Analyzer</h2>
+            <div class="form-group">
+                <label for="monthly-income">Monthly Income (after tax)</label>
+                <input type="number" id="monthly-income" value="5000">
+            </div>
+            <div class="form-group">
+                <label for="monthly-income">Monthly Income (after tax)</label>
+                <input type="number" id="monthly-income" value="5000">
+            </div>
+            <div class="form-group">
+                <label for="housing-expenses">Housing Expenses ($)</label>
+                <input type="number" id="housing-expenses" value="1500">
+            </div>
+            <div class="form-group">
+                <label for="food-expenses">Food Expenses ($)</label>
+                <input type="number" id="food-expenses" value="600">
+            </div>
+            <div class="form-group">
+                <label for="transport-expenses">Transportation Expenses ($)</label>
+                <input type="number" id="transport-expenses" value="400">
+            </div>
+            <div class="form-group">
+                <label for="other-expenses">Other Expenses ($)</label>
+                <input type="number" id="other-expenses" value="800">
+            </div>
+            <button class="btn btn-primary" onclick="analyzeBudget()">Analyze</button>
+            
+            <div class="result-container">
+                <div>Monthly Surplus/Deficit:</div>
+                <div class="result-value" id="budget-result">$0</div>
+                <div id="budget-recommendation" style="margin-top: 1rem; font-size: 0.875rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h3>FinTrack</h3>
+                    <p>Your trusted partner for financial insights and portfolio management.</p>
+                </div>
+                <div class="footer-col">
+                    <h3>Features</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">Portfolio Tracking</a></li>
+                        <li><a href="#">Market Analysis</a></li>
+                        <li><a href="#">Expense Management</a></li>
+                        <li><a href="#">Investment Insights</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Company</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Subscribe</h3>
+                    <p>Get the latest financial news and updates</p>
+                    <div class="email-form">
+                        <input type="email" placeholder="Your email" class="email-input">
+                        <button class="submit-btn">Go</button>
+                    </div>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2025 FinTrack. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Tab Navigation
+        const navItems = document.querySelectorAll('.nav-item');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const tabId = item.getAttribute('data-tab');
+                
+                // Update active tab navigation
+                navItems.forEach(navItem => navItem.classList.remove('active'));
+                item.classList.add('active');
+                
+                // Show active tab content
+                tabContents.forEach(content => content.classList.remove('active'));
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Initialize Charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Portfolio Performance Chart
+            const portfolioData = {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Portfolio Value',
+                    data: [110000, 108000, 115000, 112780, 109890, 112390, 115490, 117000, 119500, 122200, 124800, 124500],
+                    fill: false,
+                    borderColor: '#2563eb',
+                    tension: 0.4
+                }]
+            };
+
+            const portfolioCtx = document.getElementById('portfolioChart').getContext('2d');
+            const portfolioChart = new Chart(portfolioCtx, {
+                type: 'line',
+                data: portfolioData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+
+            // Asset Allocation Chart
+            const allocationData = {
+                labels: ['Technology', 'Healthcare', 'Finance', 'Consumer', 'Energy', 'Other'],
+                datasets: [{
+                    label: 'Asset Allocation',
+                    data: [35, 20, 15, 10, 10, 10],
+                    backgroundColor: [
+                        '#2563eb',
+                        '#10b981',
+                        '#f59e0b',
+                        '#ef4444',
+                        '#8b5cf6',
+                        '#64748b'
+                    ],
+                    hoverOffset: 4
+                }]
+            };
+
+            const allocationCtx = document.getElementById('allocationChart').getContext('2d');
+            const allocationChart = new Chart(allocationCtx, {
+                type: 'doughnut',
+                data: allocationData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+
+            // Portfolio History Chart
+            const historyData = {
+                labels: Array.from({length: 12}, (_, i) => {
+                    const date = new Date();
+                    date.setMonth(date.getMonth() - 11 + i);
+                    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                }),
+                datasets: [{
+                    label: 'Portfolio Value',
+                    data: [95000, 98000, 102000, 105000, 103000, 108000, 110000, 113000, 118000, 120000, 123000, 124500],
+                    fill: true,
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderColor: '#2563eb',
+                    tension: 0.4
+                }]
+            };
+
+            const historyCtx = document.getElementById('portfolioHistoryChart').getContext('2d');
+            const historyChart = new Chart(historyCtx, {
+                type: 'line',
+                data: historyData,
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '$' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Initialize Investment Chart
+            const investmentCtx = document.getElementById('investmentChart').getContext('2d');
+            window.investmentChart = new Chart(investmentCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Investment Growth',
+                        data: [],
+                        fill: true,
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderColor: '#10b981',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '$' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Initial investment calculation
+            calculateInvestment();
+        });
+
+        // Calculators
+        function calculateInvestment() {
+            const initial = parseFloat(document.getElementById('initial').value);
+            const monthly = parseFloat(document.getElementById('monthly').value);
+            const rate = parseFloat(document.getElementById('rate').value) / 100 / 12;
+            const years = parseInt(document.getElementById('years').value);
+            const months = years * 12;
+            
+            // Future value calculation
+            let futureValue = initial;
+            const valuesByYear = [initial];
+            
+            for (let i = 1; i <= months; i++) {
+                futureValue = (futureValue + monthly) * (1 + rate);
+                if (i % 12 === 0) {
+                    valuesByYear.push(futureValue);
+                }
+            }
+
+            document.getElementById('investment-result').textContent = '$' + Math.round(futureValue).toLocaleString();
+            
+            // Update chart
+            const labels = Array.from({length: years + 1}, (_, i) => `Year ${i}`);
+            window.investmentChart.data.labels = labels;
+            window.investmentChart.data.datasets[0].data = valuesByYear;
+            window.investmentChart.update();
+        }
+
+        function calculateModalInvestment() {
+            const initial = parseFloat(document.getElementById('modal-initial').value);
+            const monthly = parseFloat(document.getElementById('modal-monthly').value);
+            const rate = parseFloat(document.getElementById('modal-rate').value) / 100 / 12;
+            const years = parseInt(document.getElementById('modal-years').value);
+            const months = years * 12;
+            
+            // Future value calculation
+            let futureValue = initial;
+            
+            for (let i = 0; i < months; i++) {
+                futureValue = (futureValue + monthly) * (1 + rate);
+            }
+            
+            document.getElementById('modal-investment-result').textContent = '$' + Math.round(futureValue).toLocaleString();
+        }
+
+        function calculateLoan() {
+            const loanAmount = parseFloat(document.getElementById('loan-amount').value);
+            const loanTerm = parseInt(document.getElementById('loan-term').value);
+            const interestRate = parseFloat(document.getElementById('loan-rate').value) / 100 / 12;
+            const payments = loanTerm * 12;
+            
+            // Monthly payment calculation: P * r * (1+r)^n / ((1+r)^n - 1)
+            const monthlyPayment = loanAmount * interestRate * Math.pow(1 + interestRate, payments) / (Math.pow(1 + interestRate, payments) - 1);
+            const totalPaid = monthlyPayment * payments;
+            const totalInterest = totalPaid - loanAmount;
+            
+            document.getElementById('loan-payment-result').textContent = '$' + monthlyPayment.toFixed(2);
+            document.getElementById('loan-interest-result').textContent = '$' + Math.round(totalInterest).toLocaleString();
+        }
+
+        function calculateRetirement() {
+            const currentAge = parseInt(document.getElementById('current-age').value);
+            const retirementAge = parseInt(document.getElementById('retirement-age').value);
+            const currentSavings = parseFloat(document.getElementById('current-savings').value);
+            const monthlyContribution = parseFloat(document.getElementById('monthly-contrib').value);
+            const expectedReturn = parseFloat(document.getElementById('retirement-rate').value) / 100 / 12;
+            const months = (retirementAge - currentAge) * 12;
+            
+            // Future value calculation
+            let futureValue = currentSavings;
+            
+            for (let i = 0; i < months; i++) {
+                futureValue = (futureValue + monthlyContribution) * (1 + expectedReturn);
+            }
+            
+            document.getElementById('retire-age').textContent = retirementAge;
+            document.getElementById('retirement-result').textContent = '$' + Math.round(futureValue).toLocaleString();
+        }
+
+        function analyzeBudget() {
+            const income = parseFloat(document.getElementById('monthly-income').value);
+            const housing = parseFloat(document.getElementById('housing-expenses').value);
+            const food = parseFloat(document.getElementById('food-expenses').value);
+            const transport = parseFloat(document.getElementById('transport-expenses').value);
+            const other = parseFloat(document.getElementById('other-expenses').value);
+            
+            const totalExpenses = housing + food + transport + other;
+            const surplus = income - totalExpenses;
+            
+            const housingPercent = (housing / income * 100).toFixed(1);
+            const foodPercent = (food / income * 100).toFixed(1);
+            const transportPercent = (transport / income * 100).toFixed(1);
+            const otherPercent = (other / income * 100).toFixed(1);
+            const savingsPercent = (surplus / income * 100).toFixed(1);
+            
+            document.getElementById('budget-result').textContent = '$' + surplus.toFixed(2);
+            document.getElementById('budget-result').className = 'result-value ' + (surplus >= 0 ? 'positive' : 'negative');
+            
+            // Budget recommendations
+            let recommendation = `Your current budget breakdown: Housing (${housingPercent}%), Food (${foodPercent}%), Transportation (${transportPercent}%), Other (${otherPercent}%), Savings (${savingsPercent}%).`;
+            
+            if (surplus < 0) {
+                recommendation += " You're spending more than you earn. Consider reducing expenses.";
+            } else if (savingsPercent < 20) {
+                recommendation += " Try to increase your savings rate to at least 20%.";
+            } else {
+                recommendation += " Great job! You have a healthy savings rate.";
+            }
+            
+            document.getElementById('budget-recommendation').textContent = recommendation;
+        }
+
+        // Modal Functions
+        function openCalculator(type) {
+            const modalId = type + 'Modal';
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
